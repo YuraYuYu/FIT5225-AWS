@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Tags</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>Edit Tags</h1>
+    </header>
+    <main>
+        <input type="text" id="imageUrl" placeholder="Enter Image URL" style="width: 80%;">
+        <button onclick="viewTags()">View Tags</button>
+        <div id="tagsSection">
+            <h2>Tags:</h2>
+            <ul id="tagsList"></ul>
+        </div>
+        <div>
+            <input type="text" id="addTagInput" placeholder="Enter tag to add">
+            <button onclick="addTag()">Add Tag</button>
+        </div>
+        <div>
+            <input type="text" id="removeTagInput" placeholder="Enter tag to remove">
+            <button onclick="removeTag()">Remove Tag</button>
+        </div>
+        <p id="message"></p>
+    </main>
+    <footer>
+        <button onclick="refreshPage()">Refresh</button>
+        <button onclick="window.location.href='/dashboard'">Go to Dashboard</button>
+    </footer>
+    <script>
+        async function viewTags() {
+            const imageUrl = document.getElementById('imageUrl').value;
+            const apiUrl = `/api/dev/5225toDB?image_url=${encodeURIComponent(imageUrl)}`;
+            try {
+                const response = await fetch(apiUrl);
+                const text = await response.text();
+                console.log('API Response:', text);
+                const data = JSON.parse(text);
+
+                if (response.ok) {
+                    const tagsList = document.getElementById('tagsList');
+                    tagsList.innerHTML = '';
+
+                    const item = data.find(entry => entry.ImageURL === imageUrl);
+                    if (item && item.Tags) {
+                        item.Tags.forEach(tag => {
+                            const li = document.createElement('li');
+                            li.textContent = tag;
+                            tagsList.appendChild(li);
+                        });
+                    } else {
+                        document.getElementById('message').innerText = 'No tags found for the given image URL.';
+                    }
+                } else {
+                    document.getElementById('message').innerText = `Error: ${data.message}`;
+                }
+            } catch (error) {
+                document.getElementById('message').innerText = `Error: ${error.message}`;
+            }
+        }
+
+
+
+        async function addTag() {
+            const imageUrl = document.getElementById('imageUrl').value;
+            const tag = document.getElementById('addTagInput').value;
+            const apiUrl = '/api/dev/add-tags';
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ image_url: imageUrl, tag: tag })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    viewTags();
+                    document.getElementById('message').innerText = 'Tag added successfully.';
+                } else {
+                    document.getElementById('message').innerText = `Error: ${data.message}`;
+                }
+            } catch (error) {
+                document.getElementById('message').innerText = `Error: ${error.message}`;
+            }
+        }
+
+        async function removeTag() {
+            const imageUrl = document.getElementById('imageUrl').value;
+            const tag = document.getElementById('removeTagInput').value;
+            const apiUrl = '/api/dev/remove-tags';
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ image_url: imageUrl, tag: tag })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    viewTags();
+                    document.getElementById('message').innerText = 'Tag removed successfully.';
+                } else {
+                    document.getElementById('message').innerText = `Error: ${data.message}`;
+                }
+            } catch (error) {
+                document.getElementById('message').innerText = `Error: ${error.message}`;
+            }
+        }
+
+        function refreshPage() {
+            document.getElementById('imageUrl').value = '';
+            document.getElementById('tagsList').innerHTML = '';
+            document.getElementById('addTagInput').value = '';
+            document.getElementById('removeTagInput').value = '';
+            document.getElementById('message').innerText = '';
+        }
+    </script>
+</body>
+</html>
+
